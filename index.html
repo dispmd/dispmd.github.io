@@ -17,7 +17,71 @@
 
     <section class="main-content">
       <h3>
-<a id="tbd" class="anchor" href="#tbd" aria-hidden="true"><span class="octicon octicon-link"></span></a>tbd</h3>
+<a id="about" class="anchor" href="#about" aria-hidden="true"><span class="octicon octicon-link"></span></a>About</h3>
+
+<p>This project provides building blocks for user-customizable non-uniform power allocation in distributed systems.
+Using <strong>software-based power monitoring and power capping</strong> we implement <strong>intelligent power provisioning under constraints</strong> as a use-case.</p>
+
+<h3>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h3>
+
+<p>Suppose you run a <a href="http://ceph.com/">Ceph</a> cluster and now want to minimize its total power usage while still being able to service requests and prevent service degradation.
+All you have to do is to specify the component's relationships.</p>
+
+<blockquote>
+<p>Ceph object storage daemons depend on the monitor</p>
+</blockquote>
+
+<div class="highlight highlight-clojure"><pre>(<span class="pl-en">=&gt;</span> (<span class="pl-en">&lt;</span> scc.fs.ceph.mon0 <span class="pl-c1">20</span>)
+    (<span class="pl-en">and</span>
+      (<span class="pl-en">&lt;</span> scc.fs.ceph.osd0 <span class="pl-c1">10</span>)
+      (<span class="pl-en">&lt;</span> scc.fs.ceph.osd1 <span class="pl-c1">10</span>)
+      (<span class="pl-en">&lt;</span> scc.fs.ceph.osd2 <span class="pl-c1">10</span>)))</pre></div>
+
+<blockquote>
+<p>Replicas depend on the primary object storage daemon</p>
+</blockquote>
+
+<div class="highlight highlight-clojure"><pre>(<span class="pl-en">=&gt;</span> (<span class="pl-en">&lt;</span> scc.fs.ceph.osd0 <span class="pl-c1">20</span>)
+    (<span class="pl-en">and</span>
+      (<span class="pl-en">&lt;</span> scc.fs.ceph.osd1 <span class="pl-c1">20</span>)
+      (<span class="pl-en">&lt;</span> scc.fs.ceph.osd2 <span class="pl-c1">20</span>)))</pre></div>
+
+<blockquote>
+<p>Replicas and the primary object storage daemon must not exceed 50W</p>
+</blockquote>
+
+<div class="highlight highlight-clojure"><pre>(<span class="pl-en">&gt;</span> <span class="pl-c1">50</span>
+   (<span class="pl-en">+</span>
+    scc.fs.ceph.osd0
+    scc.fs.ceph.osd1
+    scc.fs.ceph.osd2))</pre></div>
+
+<p>This project then finds an optimal solution, optimizing the total power usage, propagating constraint to the endpoints and enforcing them locally.
+For this, we merge local physical constraints such as the minimum and maximum allowed power draw for each server as well as global constraints such as the total power consumption with user-defined constraints.</p>
+
+<h3>
+<a id="extensibility" class="anchor" href="#extensibility" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extensibility</h3>
+
+<p>We provide the architecture to monitor and power cap a distributed system's power usage from software.
+This allows experimenting with interesting ideas such as intelligent power provisioning as shown above.</p>
+
+<p>Further ideas in the context of distributed systems we wish to explore include</p>
+
+<ul>
+<li>learning a distributed system's energy flow for prediction and outlier detection</li>
+<li>analyzing CPU boundedness based on program slowdown under a CPU power limit</li>
+<li>taking the energy market's time-of-use pricing model into account for power capping decisions</li>
+</ul>
+
+<p>This project comes with a Python module to allow for rapid prototyping new ideas.</p>
+
+<h3>
+<a id="how" class="anchor" href="#how" aria-hidden="true"><span class="octicon octicon-link"></span></a>How</h3>
+
+<p>This project is written in C++14, making use of <a href="http://nanomsg.org/">Nanomsg</a> for messaging and <a href="https://github.com/Microsoft/bond">Bond</a> for serialization.
+<a href="https://github.com/Z3Prover/z3">Z3's</a> optimizing SMT solver nuZ is used for solving the problem of finding the best solution under constraints.
+Finally we use the <a href="https://www.kernel.org/doc/Documentation/power/powercap/powercap.txt">Linux power capping framework</a> with the <a href="https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-powercap">RAPL module</a> to both monitor and limit power consumption from software.</p>
 
       <footer class="site-footer">
 
